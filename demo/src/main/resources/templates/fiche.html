@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fiches Médicales</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .action-btns { white-space: nowrap; }
+        .form-container { background: #f8f9fa; padding: 20px; border-radius: 5px; margin-bottom: 20px; }
+        .toast-container { position: fixed; top: 20px; right: 20px; z-index: 1100; }
+
+        /* Styles identiques à patient.html */
+        .navbar-transparent {
+            background-color: rgba(0, 0, 0, 0.5) !important;
+            transition: background-color 0.3s;
+        }
+        .navbar-transparent.scrolled {
+            background-color: #343a40 !important;
+        }
+        .fullscreen-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://mdbootstrap.com/img/Photos/Others/images/77.jpg') no-repeat center center;
+            background-size: cover;
+            z-index: -1;
+        }
+        .bg-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: -1;
+        }
+        .content-wrapper {
+            flex: 1;
+            position: relative;
+            z-index: 1;
+            padding-top: 56px;
+        }
+        .main-content {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px auto;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+        .page-title {
+            color: white !important;
+            font-weight: bold !important;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</head>
+<body>
+<!-- Background elements -->
+<div class="fullscreen-bg"></div>
+<div class="bg-overlay"></div>
+
+<!-- Barre de navigation identique -->
+<nav class="navbar navbar-expand-lg navbar-dark navbar-transparent fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="#">
+            <i class="fas fa-heartbeat me-2"></i>Kénithérapie
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">
+                        <i class="fas fa-home"></i> Accueil
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/patients">
+                        <i class="fas fa-users"></i> Patients
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/rendezvous">
+                        <i class="fas fa-calendar-check"></i> Rendez-vous
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/paiement">
+                        <i class="fas fa-credit-card"></i> Paiement
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/login">
+                        <i class="fas fa-sign-in-alt"></i> Déconnexion
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Contenu principal -->
+<div class="content-wrapper">
+    <div class="container main-content">
+        <h1 class="mb-4 page-title">Fiches Médicales</h1>
+
+        <!-- Formulaire d'ajout/modification -->
+        <div class="form-container">
+            <h2 id="form-title">Ajouter une Fiche</h2>
+            <form id="fiche-form">
+                <input type="hidden" id="fiche-id" value="">
+                <input type="hidden" id="patient-id" th:value="${patientId}">
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea class="form-control" id="description" rows="5" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" id="submit-btn">Ajouter</button>
+                <button type="button" class="btn btn-secondary" id="cancel-btn" style="display:none;">Annuler</button>
+            </form>
+        </div>
+
+        <!-- Liste des fiches -->
+        <h2 class="mt-5">Historique des Fiches</h2>
+        <div class="table-responsive">
+            <table class="table table-striped table-hover" id="fiches-table">
+                <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <!-- Rempli dynamiquement par JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Toast pour les notifications -->
+<div class="toast-container">
+    <div class="toast align-items-center text-white bg-success" id="success-toast"
+         role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body" id="success-message"></div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                    data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+    <div class="toast align-items-center text-white bg-danger" id="error-toast"
+         role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body" id="error-message"></div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                    data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+<script>
+    // Variables globales
+    const API_BASE_URL = `http://localhost:8080/api/fiches`;
+
+    let fiches = [];
+
+    // Éléments du DOM
+    const ficheForm = document.getElementById('fiche-form');
+    const fichesTable = document.getElementById('fiches-table').querySelector('tbody');
+    const successToast = new bootstrap.Toast(document.getElementById('success-toast'));
+    const errorToast = new bootstrap.Toast(document.getElementById('error-toast'));
+
+    // Formatage de date
+    const formatDate = (dateString) => {
+        const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+        return new Date(dateString).toLocaleDateString('fr-FR', options);
+    };
+
+    // Chargement initial
+    document.addEventListener('DOMContentLoaded', () => {
+        chargerFiches();
+        setupForm();
+        setupNavbar();
+    });
+
+    // 1. Récupération de l'ID depuis l'URL
+    function getPatientIdFromUrl() {
+        const pathParts = window.location.pathname.split('/');
+
+        // Supprime les éventuels segments vides
+        const nonEmptyParts = pathParts.filter(part => part.trim() !== '');
+
+        // Récupère le dernier segment non vide
+        const lastPart = nonEmptyParts.pop() || '';
+
+        // Conversion en nombre
+        const patientId = parseInt(lastPart);
+
+        // Validation
+        if (isNaN(patientId)) {
+            console.error("ID patient invalide dans l'URL:", lastPart);
+            showError("URL invalide - ID patient manquant");
+            return null;
+        }
+
+        return patientId;
+    }
+
+    // 2. Utilisation sécurisée
+    const patientId = getPatientIdFromUrl();
+
+
+
+    // Charger les fiches
+    async function chargerFiches() {
+        try {
+
+        // Maintenant vous pouvez utiliser patientId
+            console.log("ID patient valide:", patientId);
+            const response = await fetch(`http://localhost:8080/api/fiches/${patientId}`);
+
+            if (!response.ok) throw new Error(`Erreur HTTP: ${response.status}`);
+
+            fiches = await response.json();
+            console.log("Données reçues: ", fiches);
+            afficherFiches(fiches);
+        } catch (error) {
+            console.error('Erreur:', error);
+            showError(`Erreur lors du chargement: ${error.message}`);
+        }
+    }
+
+    // Afficher les fiches
+    function afficherFiches(fiches) {
+        fichesTable.innerHTML = '';
+
+        fiches.forEach(fiche => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${fiche.id}</td>
+                <td>${formatDate(fiche.dateCreation)}</td>
+                <td style="max-width: 300px; overflow-wrap: break-word;">${escapeHtml(fiche.description)}</td>
+                <td class="action-btns">
+                    <button class="btn btn-sm btn-warning edit-btn"
+                            data-id="${fiche.id}"
+                            data-description="${escapeHtml(fiche.description)}">
+                        Modifier
+                    </button>
+                    <button class="btn btn-sm btn-danger delete-btn"
+                            data-id="${fiche.id}">
+                        Supprimer
+                    </button>
+                </td>
+            `;
+            fichesTable.appendChild(row);
+        });
+
+        // Écouteurs d'événements
+        document.querySelectorAll('.edit-btn').forEach(btn => {
+            btn.addEventListener('click', handleEdit);
+        });
+
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', handleDelete);
+        });
+    }
+
+    // Configurer le formulaire
+    function setupForm() {
+        ficheForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const fiche = {
+                patientId: patientId,
+                description: document.getElementById('description').value
+            };
+
+            const ficheId = document.getElementById('fiche-id').value;
+            const isEdit = !!ficheId;
+            const API_BASE_URL1 = `http://localhost:8080/api/fiches/${patientId}`;
+
+            try {
+                const response = await fetch(
+                    isEdit ? `${API_BASE_URL}/${ficheId}` : API_BASE_URL1,
+                    {
+                        method: isEdit ? 'PUT' : 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(fiche)
+                    }
+                );
+
+                if (!response.ok) throw new Error(await response.text());
+
+                showSuccess(isEdit ? 'Fiche modifiée avec succès' : 'Fiche ajoutée avec succès');
+                resetForm();
+                await chargerFiches();
+            } catch (error) {
+                showError(error.message);
+            }
+        });
+
+        document.getElementById('cancel-btn').addEventListener('click', resetForm);
+    }
+
+    // Gérer l'édition
+    function handleEdit(e) {
+        const btn = e.currentTarget;
+        document.getElementById('fiche-id').value = btn.dataset.id;
+        document.getElementById('description').value = btn.dataset.description;
+
+        document.getElementById('form-title').textContent = 'Modifier Fiche';
+        document.getElementById('submit-btn').textContent = 'Mettre à jour';
+        document.getElementById('cancel-btn').style.display = 'inline-block';
+
+        document.querySelector('.form-container').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Gérer la suppression
+    async function handleDelete(e) {
+        const id = e.currentTarget.dataset.id;
+        if (!confirm('Êtes-vous sûr de vouloir supprimer cette fiche?')) return;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/${id}`, { method: 'DELETE' });
+            if (!response.ok) throw new Error('Échec de la suppression');
+
+            showSuccess('Fiche supprimée avec succès');
+            await chargerFiches();
+        } catch (error) {
+            showError(error.message);
+        }
+    }
+
+    // Réinitialiser le formulaire
+    function resetForm() {
+        ficheForm.reset();
+        document.getElementById('fiche-id').value = '';
+        document.getElementById('form-title').textContent = 'Ajouter une Fiche';
+        document.getElementById('submit-btn').textContent = 'Ajouter';
+        document.getElementById('cancel-btn').style.display = 'none';
+    }
+
+    // Afficher les messages
+    function showSuccess(message) {
+        document.getElementById('success-message').textContent = message;
+        successToast.show();
+    }
+
+    function showError(message) {
+        document.getElementById('error-message').textContent = message;
+        errorToast.show();
+    }
+
+    // Échapper le HTML
+    function escapeHtml(unsafe) {
+        return unsafe?.toString()
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;") || '';
+    }
+
+    // Configuration navbar
+    function setupNavbar() {
+        const navbar = document.querySelector('.navbar-transparent');
+        window.addEventListener('scroll', () => {
+            navbar.classList.toggle('scrolled', window.scrollY > 50);
+        });
+    }
+</script>
+</body>
+</html>

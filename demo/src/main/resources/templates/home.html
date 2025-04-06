@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accueil - Kénithérapie</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome pour les icônes -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* Navbar transparente */
+        .navbar-transparent {
+            background-color: rgba(0, 0, 0, 0.5) !important;
+            transition: background-color 0.3s;
+        }
+
+        .navbar-transparent.scrolled {
+            background-color: #343a40 !important;
+        }
+
+        /* Background fullscreen */
+        .fullscreen-bg {
+            position: relative;
+            height: 100vh;
+            background: url('https://mdbootstrap.com/img/Photos/Others/images/77.jpg') no-repeat center center;
+            background-size: cover;
+            margin-top: -56px; /* Compensation pour la navbar */
+            padding-top: 56px; /* Hauteur de la navbar */
+        }
+
+        /* Overlay sombre */
+        .bg-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        /* Contenu centré */
+        .content-container {
+            position: relative;
+            z-index: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+<!-- Barre de navigation -->
+<nav class="navbar navbar-expand-lg navbar-dark navbar-transparent fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="#">
+            <i class="fas fa-heartbeat me-2"></i>Kénithérapie
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link active" href="/">
+                        <i class="fas fa-home"></i> Accueil
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/patients">
+                        <i class="fas fa-users"></i> Gestion des patients
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/rendezvous">
+                        <i class="fas fa-calendar-check"></i> Rendez-vous
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/paiement">
+                        <i class="fas fa-credit-card"></i> Paiement
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/login">
+                        <i class="fas fa-sign-in-alt"></i> Deconnexion
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Section fullscreen avec background -->
+<section class="fullscreen-bg">
+    <div class="bg-overlay"></div>
+
+    <div class="container content-container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center">
+                <h1 class="display-4 fw-bold mb-4">Centre de Kénithérapie</h1>
+                <p class="lead mb-5">Votre bien-être commence ici</p>
+
+                <a href="/rendezvous" class="btn btn-primary btn-lg px-5 py-3">
+                    <i class="fas fa-calendar-plus me-2"></i>Prendre rendez-vous
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Script pour l'effet de scroll -->
+<script>
+    window.addEventListener('scroll', function() {
+        const navbar = document.querySelector('.navbar');
+        if (window.scrollY > 50) {
+            navbar.classList.add('scrolled');
+        } else {
+            navbar.classList.remove('scrolled');
+        }
+    });
+</script>
+</body>
+</html>

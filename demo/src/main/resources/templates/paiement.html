@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Paiements</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: url('https://mdbootstrap.com/img/Photos/Others/images/77.jpg') no-repeat center center fixed;
+            background-size: cover;
+        }
+
+        .bg-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: -1;
+        }
+
+        .content-wrapper {
+            flex: 1;
+            padding-top: 56px;
+        }
+
+        .main-content {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            padding: 25px;
+            margin: 30px auto;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+            max-width: 1200px;
+        }
+
+        .navbar-transparent {
+            background-color: transparent !important;
+            transition: background-color 0.3s;
+        }
+
+        .navbar-transparent.scrolled {
+            background-color: #343a40 !important;
+        }
+
+        .payment-card {
+            transition: transform 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .payment-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .action-btns {
+            white-space: nowrap;
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1100;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                margin: 15px;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="bg-overlay"></div>
+
+<!-- Barre de navigation -->
+<nav class="navbar navbar-expand-lg navbar-dark navbar-transparent fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="#">
+            <i class="fas fa-heartbeat me-2"></i>Kénithérapie
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">
+                        <i class="fas fa-home"></i> Accueil
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/patients">
+                        <i class="fas fa-users"></i> Patients
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/rendezvous">
+                        <i class="fas fa-calendar-check"></i> Rendez-vous
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/paiements">
+                        <i class="fas fa-credit-card"></i> Paiements
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/login">
+                        <i class="fas fa-sign-in-alt"></i> Déconnexion
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="content-wrapper">
+    <div class="container main-content">
+        <h2 class="mb-4 text-center"><i class="fas fa-credit-card me-2"></i>Gestion des Paiements</h2>
+
+        <!-- Formulaire de recherche/filtrage -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="patientSearch" class="form-label">Rechercher patient</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="patientSearch" placeholder="Nom, prénom...">
+                            <button class="btn btn-primary" type="button">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="dateFilter" class="form-label">Filtrer par date</label>
+                        <input type="date" class="form-control" id="dateFilter">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="statusFilter" class="form-label">Statut</label>
+                        <select class="form-select" id="statusFilter">
+                            <option value="">Tous</option>
+                            <option value="PAYE">Payé</option>
+                            <option value="EN_ATTENTE">En attente</option>
+                            <option value="ANNULE">Annulé</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tableau des paiements -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Liste des paiements</h5>
+                <button class="btn btn-success" id="addPaymentBtn">
+                    <i class="fas fa-plus me-2"></i>Nouveau paiement
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle" id="paymentsTable">
+                        <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Patient</th>
+                            <th>Date</th>
+                            <th>Montant</th>
+                            <th>Méthode</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <!-- Exemple de ligne - sera rempli dynamiquement -->
+                        <tr>
+                            <td>PAY-001</td>
+                            <td>Dupont Jean</td>
+                            <td>04/04/2023</td>
+                            <td>120,00 €</td>
+                            <td><span class="badge bg-primary">Carte</span></td>
+                            <td><span class="badge bg-success">Payé</span></td>
+                            <td class="action-btns">
+                                <button class="btn btn-sm btn-outline-primary me-1">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-warning me-1">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour ajouter/modifier un paiement -->
+<div class="modal fade" id="paymentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Nouveau paiement</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="paymentForm">
+                    <input type="hidden" id="paymentId">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="patientSelect" class="form-label">Patient</label>
+                            <select class="form-select" id="patientSelect" required>
+                                <option value="">Sélectionner un patient</option>
+                                <!-- Options seront ajoutées dynamiquement -->
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="paymentDate" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="paymentDate" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="amount" class="form-label">Montant (DH)</label>
+                            <input type="number" step="0.01" class="form-control" id="amount" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="paymentMethod" class="form-label">Méthode de paiement</label>
+                            <select class="form-select" id="paymentMethod" required>
+                                <option value="">Sélectionner</option>
+                                <option value="CARTE">Carte bancaire</option>
+                                <option value="ESPECES">Espèces</option>
+                                <option value="CHEQUE">Chèque</option>
+                                <option value="VIREMENT">Virement</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="status" class="form-label">Statut</label>
+                            <select class="form-select" id="status" required>
+                                <option value="PAYE">Payé</option>
+                                <option value="EN_ATTENTE">En attente</option>
+                                <option value="ANNULE">Annulé</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" rows="3"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" id="savePaymentBtn">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast pour notifications -->
+<div class="toast-container">
+    <div class="toast align-items-center text-white bg-success" role="alert" aria-live="assertive" aria-atomic="true" id="successToast">
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="fas fa-check-circle me-2"></i>
+                <span id="successMessage">Opération réussie</span>
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+    <div class="toast align-items-center text-white bg-danger" role="alert" aria-live="assertive" aria-atomic="true" id="errorToast">
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                <span id="errorMessage">Erreur lors de l'opération</span>
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Scripts JavaScript pour la gestion des paiements
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialisation des tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Gestion de la navbar scroll
+        window.addEventListener('scroll', function() {
+            const navbar = document.querySelector('.navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Initialisation des toasts
+        const successToast = new bootstrap.Toast(document.getElementById('successToast'));
+        const errorToast = new bootstrap.Toast(document.getElementById('errorToast'));
+
+        // Gestion du modal
+        const paymentModal = new bootstrap.Modal(document.getElementById('paymentModal'));
+
+        // Bouton d'ajout
+        document.getElementById('addPaymentBtn').addEventListener('click', function() {
+            document.getElementById('modalTitle').textContent = 'Nouveau paiement';
+            document.getElementById('paymentForm').reset();
+            document.getElementById('paymentId').value = '';
+            paymentModal.show();
+        });
+
+        // Sauvegarde du paiement
+        document.getElementById('savePaymentBtn').addEventListener('click', function() {
+            // Validation du formulaire
+            const form = document.getElementById('paymentForm');
+            if (!form.checkValidity()) {
+                form.classList.add('was-validated');
+                return;
+            }
+
+            // Récupération des données
+            const paymentData = {
+                id: document.getElementById('paymentId').value || null,
+                patientId: document.getElementById('patientSelect').value,
+                date: document.getElementById('paymentDate').value+"T00:00:00",
+                montant: parseFloat(document.getElementById('amount').value),
+                methode: document.getElementById('paymentMethod').value,
+                statut: document.getElementById('status').value,
+                notes: document.getElementById('notes').value
+            };
+
+            // Détermination de la méthode HTTP
+            const method = paymentData.id ? 'PUT' : 'POST';
+            const url = paymentData.id
+                ? `http://localhost:8080/api/paiement/modifier/${paymentData.id}/${paymentData.patientId}`
+                : `http://localhost:8080/api/paiement/ajouter/${paymentData.patientId}`;
+
+            // Envoi de la requête
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(paymentData)
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Erreur réseau');
+                return response.json();
+            })
+            .then(data => {
+                showToast('Paiement enregistré avec succès', true);
+                paymentModal.hide();
+                loadPayments(); // Recharger les paiements
+            })
+            .catch(error => {
+                showToast('Erreur: ' + error.message, false);
+                console.error('Erreur:', error);
+            });
+        });
+
+        // Fonction pour charger les paiements
+        function loadPayments() {
+            fetch(`http://localhost:8080/api/paiement/liste`)
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.querySelector('#paymentsTable tbody');
+                    tbody.innerHTML = '';
+                    data.forEach(paiement => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${paiement.id}</td>
+                            <td>${paiement.patient.nom} ${paiement.patient.prenom}</td>
+                            <td>${new Date(paiement.date).toLocaleDateString()}</td>
+                            <td>${paiement.montant.toFixed(2)} DH</td>
+                            <td><span class="badge ${getMethodBadgeClass(paiement.methode)}">${getMethodLabel(paiement.methode)}</span></td>
+                            <td><span class="badge ${getStatusBadgeClass(paiement.statut)}">${getStatusLabel(paiement.statut)}</span></td>
+                            <td class="action-btns">
+                                <button class="btn btn-sm btn-outline-primary me-1 view-btn" data-id="${paiement.id}">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-warning me-1 edit-btn" data-id="${paiement.id}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger delete-btn" data-id="${paiement.id}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+
+                    // Ajout des écouteurs d'événements
+                    document.querySelectorAll('.edit-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const paymentId = this.getAttribute('data-id');
+                            editPayment(paymentId);
+                        });
+                    });
+
+                    document.querySelectorAll('.delete-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const paymentId = this.getAttribute('data-id');
+                            deletePayment(paymentId);
+                        });
+                    });
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    showToast('Erreur lors du chargement des paiements', false);
+                });
+        }
+
+        // Fonctions utilitaires
+        function getMethodLabel(method) {
+            const methods = {
+                'CARTE': 'Carte',
+                'ESPECES': 'Espèces',
+                'CHEQUE': 'Chèque',
+                'VIREMENT': 'Virement'
+            };
+            return methods[method] || method;
+        }
+
+        function getMethodBadgeClass(method) {
+            const classes = {
+                'CARTE': 'bg-primary',
+                'ESPECES': 'bg-secondary',
+                'CHEQUE': 'bg-info',
+                'VIREMENT': 'bg-dark'
+            };
+            return classes[method] || 'bg-light text-dark';
+        }
+
+        function getStatusLabel(status) {
+            const statuses = {
+                'PAYE': 'Payé',
+                'EN_ATTENTE': 'En attente',
+                'ANNULE': 'Annulé'
+            };
+            return statuses[status] || status;
+        }
+
+        function getStatusBadgeClass(status) {
+            const classes = {
+                'PAYE': 'bg-success',
+                'EN_ATTENTE': 'bg-warning text-dark',
+                'ANNULE': 'bg-danger'
+            };
+            return classes[status] || 'bg-light text-dark';
+        }
+
+        function showToast(message, isSuccess) {
+            if (isSuccess) {
+                document.getElementById('successMessage').textContent = message;
+                successToast.show();
+            } else {
+                document.getElementById('errorMessage').textContent = message;
+                errorToast.show();
+            }
+        }
+        function editPayment(paymentId) {
+            fetch(`http://localhost:8080/api/paiement/${paymentId}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                    document.getElementById('modalTitle').textContent = 'Modifier paiement';
+                    document.getElementById('paymentId').value = data.id;
+                    document.getElementById('patientSelect').value = data.patient.id;
+                    document.getElementById('paymentDate').value = data.date.split('T')[0];
+                    document.getElementById('amount').value = data.montant;
+                    document.getElementById('paymentMethod').value = data.methode;
+                    document.getElementById('status').value = data.statut;
+                    document.getElementById('notes').value = data.notes || '';
+                    paymentModal.show();
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    showToast('Erreur lors du chargement du paiement', false);
+                });
+        }
+
+        function deletePayment(paymentId) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer ce paiement ?')) {
+             const deleteButton = document.querySelector(`.delete-btn[data-id="${paymentId}"]`);
+                fetch(`/api/paiement/supprimer/${paymentId}`, {
+                    method: 'DELETE',
+
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Erreur réseau');
+                    showToast('Paiement supprimé avec succès', true);
+                    loadPayments();
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    showToast('Erreur lors de la suppression', false);
+                });
+            }
+        }
+
+        // Chargement initial
+        loadPayments();
+        loadPatients(); // Pour le select des patients
+
+        // Chargement des patients pour le select
+        function loadPatients() {
+            fetch('/api/patients')
+                .then(response => response.json())
+                .then(data => {
+                    const select = document.getElementById('patientSelect');
+                    data.forEach(patient => {
+                        const option = document.createElement('option');
+                        option.value = patient.id;
+                        option.textContent = `${patient.nom} ${patient.prenom}`;
+                        select.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                });
+        }
+    });
+</script>
+</body>
+</html>

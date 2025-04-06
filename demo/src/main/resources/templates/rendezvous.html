@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rendez-vous - Centre Keni</title>
+    <!-- CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+
+    <!-- Styles identiques à fiche.html -->
+    <style>
+        .navbar-transparent {
+            background-color: rgba(0, 0, 0, 0.5) !important;
+            transition: background-color 0.3s;
+        }
+        .navbar-transparent.scrolled {
+            background-color: #343a40 !important;
+        }
+        .fullscreen-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://mdbootstrap.com/img/Photos/Others/images/77.jpg') no-repeat center center;
+            background-size: cover;
+            z-index: -1;
+        }
+        .bg-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: -1;
+        }
+        .content-wrapper {
+            flex: 1;
+            position: relative;
+            z-index: 1;
+            padding-top: 56px;
+        }
+        .main-content {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px auto;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+        .page-title {
+            color: white !important;
+            font-weight: bold !important;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+        }
+        /* Styles spécifiques au calendrier */
+        #calendar {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .fc-event {
+            cursor: pointer;
+            font-size: 0.85em;
+            padding: 2px 5px;
+        }
+    </style>
+</head>
+<body>
+<!-- Background identique à fiche.html -->
+<div class="fullscreen-bg"></div>
+<div class="bg-overlay"></div>
+
+<!-- Barre de navigation identique à fiche.html -->
+<nav class="navbar navbar-expand-lg navbar-dark navbar-transparent fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="#">
+            <i class="bi bi-heart-pulse me-2"></i>Kénithérapie
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">
+                        <i class="bi bi-house-door me-1"></i> Accueil
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/patients">
+                        <i class="bi bi-people-fill me-1"></i> Patients
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/rendezvous">
+                        <i class="bi bi-calendar-check-fill me-1"></i> Rendez-vous
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/paiement">
+                        <i class="fas fa-credit-card"></i> Paiement
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/fiches">
+                        <i class="bi bi-file-earmark-medical-fill me-1"></i> Fiches
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/login">
+                        <i class="bi bi-box-arrow-right me-1"></i> Déconnexion
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container my-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Gestion des Rendez-vous</h1>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#rdvModal">
+            <i class="bi bi-plus-circle"></i> Nouveau RDV
+        </button>
+    </div>
+
+    <!-- Calendrier -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Calendrier</h6>
+        </div>
+        <div class="card-body">
+            <div id="calendar"></div>
+        </div>
+    </div>
+
+    <!-- Liste des RDV (style similaire à patient.html) -->
+    <div class="card shadow">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Liste des Rendez-vous</h6>
+            <div class="input-group" style="width: 300px;">
+                <input type="text" class="form-control" placeholder="Rechercher...">
+                <button class="btn btn-outline-secondary" type="button">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Patient</th>
+                        <th>Date</th>
+                        <th>Heure</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody id="rdvTableBody">
+                    <!-- Rempli dynamiquement -->
+                    </tbody>
+                </table>
+            </div>
+            <nav>
+                <ul class="pagination justify-content-center">
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" tabindex="-1">Précédent</a>
+                    </li>
+                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                    <li class="page-item"><a class="page-link" href="#">2</a></li>
+                    <li class="page-item">
+                        <a class="page-link" href="#">Suivant</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- Modal RDV (identique au style patient.html) -->
+<div class="modal fade" id="rdvModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nouveau Rendez-vous</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="rdvForm">
+                    <input type="hidden" id="rdvId">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Patient</label>
+                            <select id="patientId" class="form-select" required>
+                                <option value="">Sélectionner un patient</option>
+
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Statut</label>
+                            <select id="rdvStatut" class="form-select" required>
+                                <option value="confirmé">Confirmé</option>
+                                <option value="annulé">Annulé</option>
+                                <option value="en_attente">En attente</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Date</label>
+                            <input type="date" id="rdvDate" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Heure</label>
+                            <input type="time" id="rdvHeure" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea id="rdvNotes" class="form-control" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" id="saveRdvBtn" class="btn btn-primary">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/fr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    // Données de démonstration
+    let rendezVous = [
+
+    ];
+
+    function loadPatients() {
+    fetch('http://localhost:8080/api/patients')
+        .then(response => response.json())
+        .then(patients => {
+            const select = document.getElementById('patientId');
+            select.innerHTML = '<option value="">Sélectionner un patient</option>'; // Réinitialiser le select
+
+            patients.forEach(patient => {
+                const option = document.createElement('option');
+                option.value = patient.id;
+                option.textContent = `${patient.nom} ${patient.prenom} (ID: ${patient.id})`;
+                select.appendChild(option);
+            });
+        })
+        .catch(error => console.error('Erreur lors du chargement des patients:', error));
+    }
+
+    function fetchRendezVous() {
+    fetch('/api/rendezvous')  // Remplacez par l'URL réelle de votre API
+        .then(response => response.json())
+        .then(data => {
+            rendezVous = data;  // Met à jour la liste avec les données du backend
+            loadRdvTable();     // Recharge le tableau
+            initCalendar();     // Recharge le calendrier
+        })
+        .catch(error => console.error('Erreur lors du chargement des rendez-vous:', error));
+}
+
+    // Initialisation
+    document.addEventListener('DOMContentLoaded', function() {
+        fetchRendezVous(); // Charge les RDV depuis la base de données
+        setupEventListeners(); // Garde la gestion des événements
+        loadPatients();
+    });
+
+    function initCalendar() {
+        const calendarEl = document.getElementById('calendar');
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            locale: 'fr',
+            initialView: 'timeGridWeek',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            events: rendezVous.map(rdv => ({
+                id: rdv.id,
+                title: `RDV ${rdv.patient.nom}`,
+                start: `${rdv.date.split('T')[0]}T${rdv.heure}`,
+                extendedProps: {
+                    statut: rdv.statut,
+                    notes: rdv.notes
+                },
+                className: `statut-${rdv.statut.replace('é', 'e').replace(' ', '-')}`
+            })),
+            eventClick: function(info) {
+                const rdv = getRdvById(info.event.id);
+                openRdvModal(rdv);
+            },
+            dateClick: function(info) {
+                openRdvModal(null, info.dateStr);
+            }
+        });
+        calendar.render();
+    }
+
+    function loadRdvTable() {
+        const tbody = document.getElementById('rdvTableBody');
+        tbody.innerHTML = '';
+
+        rendezVous.forEach(rdv => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${rdv.id}</td>
+                <td>${rdv.patient.nom} ${rdv.patient.prenom}</td>
+                <td>${formatDate(rdv.date)}</td>
+                <td>${rdv.heure}</td>
+                <td><span class="badge bg-${getStatusBadgeClass(rdv.statut)}">${rdv.statut}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-warning edit-btn" data-id="${rdv.id}">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger delete-btn" data-id="${rdv.id}">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function setupEventListeners() {
+        // Sauvegarde RDV
+        document.getElementById('saveRdvBtn').addEventListener('click', saveRdv);
+
+        // Écouteurs pour les boutons edit/delete
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.edit-btn')) {
+                const id = e.target.closest('.edit-btn').dataset.id;
+                const rdv = getRdvById(id);
+                openRdvModal(rdv);
+            }
+
+            if (e.target.closest('.delete-btn')) {
+                const id = e.target.closest('.delete-btn').dataset.id;
+                deleteRdv(id);
+            }
+        });
+    }
+
+    function openRdvModal(rdv = null, date = null) {
+        const modal = new bootstrap.Modal(document.getElementById('rdvModal'));
+        const form = document.getElementById('rdvForm');
+        const modalTitle = document.getElementById('rdvModal').querySelector('.modal-title');
+
+        form.reset();
+
+        if (rdv) {
+            modalTitle.textContent = "Modifier Rendez-vous";
+            document.getElementById('rdvId').value = rdv.id;
+            document.getElementById('patientId').value = rdv.patient.id;
+            document.getElementById('rdvDate').value = rdv.date.split('T')[0];
+            document.getElementById('rdvHeure').value = rdv.heure;
+            document.getElementById('rdvStatut').value = rdv.statut;
+            document.getElementById('rdvNotes').value = rdv.notes || '';
+        } else {
+            modalTitle.textContent = "Nouveau Rendez-vous";
+            if (date) {
+                document.getElementById('rdvDate').value = date;
+            }
+        }
+
+        modal.show();
+    }
+
+function saveRdv() {
+    const form = document.getElementById('rdvForm');
+    if (!form.checkValidity()) {
+        form.classList.add('was-validated');
+        return;
+    }
+
+    const rdvData = {
+        id: document.getElementById('rdvId').value || null, // null = nouvel ID généré en base
+        patient_id: parseInt(document.getElementById('patientId').value),
+        date: document.getElementById('rdvDate').value,
+        heure: document.getElementById('rdvHeure').value,
+        statut: document.getElementById('rdvStatut').value,
+        notes: document.getElementById('rdvNotes').value
+    };
+
+    rdvData.date = document.getElementById('rdvDate').value+'T00:00:00';
+
+    const method = rdvData.id ? 'PUT' : 'POST';
+    const url = rdvData.id ? `/api/rendezvous/modifier/${rdvData.id}/${rdvData.patient_id}` : `/api/rendezvous/ajouter/${rdvData.patient_id}`;
+    console.log(url);
+    fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(rdvData)
+    })
+    .then(response => response.json())
+    .then(() => {
+        bootstrap.Modal.getInstance(document.getElementById('rdvModal')).hide();
+        fetchRendezVous(); // Recharge depuis la base après sauvegarde
+        Swal.fire({
+            icon: 'success',
+            title: 'Rendez-vous enregistré',
+            showConfirmButton: false,
+            timer: 1500
+        });
+    })
+    .catch(error => console.error('Erreur lors de l\'enregistrement:', error));
+}
+
+function deleteRdv(id) {
+    Swal.fire({
+        title: 'Confirmer la suppression',
+        text: "Vous ne pourrez pas annuler cette action!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Oui, supprimer!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/api/rendezvous/supprimer/${id}`, { method: 'DELETE' })
+            .then(() => {
+                fetchRendezVous(); // Recharge la liste après suppression
+                Swal.fire('Supprimé!', 'Le rendez-vous a été supprimé.', 'success');
+            })
+            .catch(error => console.error('Erreur lors de la suppression:', error));
+        }
+    });
+}
+
+    // Helper functions
+    function getRdvById(id) {
+        return rendezVous.find(r => r.id == id);
+    }
+
+    function formatDate(dateStr) {
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        return new Date(dateStr).toLocaleDateString('fr-FR', options);
+    }
+
+    function getStatusBadgeClass(statut) {
+        switch(statut) {
+            case 'confirmé': return 'success';
+            case 'annulé': return 'danger';
+            case 'en_attente': return 'warning';
+            default: return 'secondary';
+        }
+    }
+</script>
+</body>
+</html>
